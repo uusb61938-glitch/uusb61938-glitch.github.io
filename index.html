@@ -73,6 +73,14 @@ h2{font-weight:900;font-size:clamp(1.5rem,5vw,2.1rem);margin:0 0 8px;line-height
 footer{text-align:center;color:var(--muted);font-size:.9rem;padding:30px 20px 40px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:99px;opacity:0;pointer-events:none;transition:.25s;font-size:.95rem}
 .toast.on{opacity:1;transform:translate(-50%,0)}
+.sh{margin:44px 0 6px}
+.songs{display:grid;gap:12px;padding:0;margin:0;list-style:none}
+.songs li{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.songs .n{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--hot),var(--deep));color:#fff;font-weight:900}
+.songs b{display:block;font-weight:900}
+.songs span{color:var(--muted);font-size:.94rem}
+.songs a{margin-inline-start:auto;font-size:.92rem;color:var(--red);font-weight:900;text-decoration:none;white-space:nowrap}
+.songs .empty{color:var(--muted);display:block}
 @media (prefers-reduced-motion:reduce){.disc,.eq i{animation:none}.eq i{height:var(--h,60%)}}
 </style>
 </head>
@@ -100,6 +108,10 @@ footer{text-align:center;color:var(--muted);font-size:.9rem;padding:30px 20px 40
     <li><div class="dot">🎶</div><div><b>رایگان و همیشه به‌روز</b><span>عضو شو و هر آهنگ جدید رو مستقیم تو روبیکا بشنو.</span></div></li>
   </ul>
 
+  <h2 class="sh">آهنگ‌های ترند این هفته</h2>
+  <p class="lead">آخرین آهنگ‌هایی که تو کانال گذاشتیم.</p>
+  <ul class="songs" id="songs"><li class="empty">در حال بارگذاری…</li></ul>
+
   <section class="join">
     <h2>آهنگ بعدی که همه ازش حرف می‌زنن، اول اینجا میاد</h2>
     <p>یه کلیک تا عضویت. بیا تو کانال و از ترندها عقب نمون.</p>
@@ -120,6 +132,18 @@ footer{text-align:center;color:var(--muted);font-size:.9rem;padding:30px 20px 40
     b.style.animationDuration=(0.8+(i%5)*0.12)+'s';
     eq.appendChild(b);
   }
+  function note(t){var u=document.getElementById('songs');u.textContent='';var e=document.createElement('li');e.className='empty';e.textContent=t;u.appendChild(e)}
+  fetch('songs.json?v='+Date.now()).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(a){
+    if(!a.length){note('لیست آهنگ‌ها به‌زودی اینجا میاد.');return}
+    var u=document.getElementById('songs');u.textContent='';
+    a.slice(0,20).forEach(function(s,i){
+      var li=document.createElement('li'),n=document.createElement('div'),d=document.createElement('div'),b=document.createElement('b'),p=document.createElement('span'),l=document.createElement('a');
+      n.className='n';n.textContent=String(i+1);b.textContent=s.title||'';p.textContent=s.artist||'';
+      d.appendChild(b);d.appendChild(p);
+      l.href=(s.link&&/^https:\/\//.test(s.link))?s.link:'https://rubika.ir/hangfank';l.target='_blank';l.rel='noopener';l.textContent='شنیدن';
+      li.appendChild(n);li.appendChild(d);li.appendChild(l);u.appendChild(li);
+    });
+  }).catch(function(){note('لیست آهنگ‌ها به‌زودی اینجا میاد.')});
   var t=document.getElementById('toast');
   document.getElementById('copy').addEventListener('click',function(){
     function ok(){t.classList.add('on');setTimeout(function(){t.classList.remove('on')},1800)}

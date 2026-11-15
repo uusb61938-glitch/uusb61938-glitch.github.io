@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>پنل مدیریت | آهنگ فانک</title>
+<style>
+:root{--bg:#14070a;--card:#220a0f;--line:#4a1a22;--text:#fff1f2;--muted:#d9a3a9;--red:#e11d2e;--hot:#ff3b4a;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.9;padding:16px 16px 48px;max-width:680px;margin-inline:auto}
+h1{font-size:1.4rem;margin:8px 0 18px}
+h2{font-size:1.1rem;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:16px}
+label{display:block;color:var(--muted);font-size:.9rem;margin:8px 0 4px}
+input{width:100%;min-height:46px;border-radius:12px;border:1px solid var(--line);background:#14070a;color:var(--text);padding:0 12px;font:inherit}
+button,.lnk{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 18px;border-radius:12px;border:0;background:var(--red);color:#fff;font:inherit;font-weight:700;cursor:pointer;text-decoration:none;margin-top:10px}
+button.sec,.lnk.sec{background:transparent;border:1px solid var(--line);color:var(--text)}
+button.del{min-height:36px;margin:0;padding:0 12px;background:transparent;border:1px solid var(--line);color:#ff8d96}
+ul{list-style:none;padding:0;margin:12px 0 0}
+li{display:flex;gap:10px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding:10px 0}
+li b{display:block}li span{color:var(--muted);font-size:.9rem}
+#msg{min-height:1.6em;margin-top:10px;font-size:.95rem}
+small{color:var(--muted)}
+</style>
+</head>
+<body>
+<h1>🎧 پنل مدیریت آهنگ فانک</h1>
+
+<div class="card" id="login">
+  <h2>۱. ورود با توکن گیت‌هاب</h2>
+  <small>توکن مثل رمز عبوره. جای دیگه نفرستش و فقط تو همین گوشی ذخیره می‌شه.</small>
+  <label for="tok">توکن (Token)</label>
+  <input id="tok" type="password" autocomplete="off" dir="ltr">
+  <button id="go" type="button">ورود و بارگذاری آهنگ‌ها</button>
+</div>
+
+<div class="card" id="editor" hidden>
+  <h2>۲. آهنگ‌های سایت</h2>
+  <label for="ti">اسم آهنگ</label>
+  <input id="ti">
+  <label for="ar">خواننده</label>
+  <input id="ar">
+  <label for="lk">لینک پست آهنگ تو کانال (اختیاری)</label>
+  <input id="lk" dir="ltr" placeholder="https://rubika.ir/hangfank/...">
+  <button id="add" type="button">افزودن به بالای لیست</button>
+  <ul id="list"></ul>
+  <button id="save" type="button">ذخیره‌ی تغییرات روی سایت</button>
+</div>
+
+<div class="card">
+  <h2>۳. آمار بازدید واقعی</h2>
+  <small>آمار واقعی بازدیدکننده‌ها رو گوگل نشون می‌ده، نه این صفحه.</small><br>
+  <a class="lnk" href="https://analytics.google.com" target="_blank" rel="noopener">گوگل آنالیتیکس (بازدیدکننده‌ها)</a>
+  <a class="lnk sec" href="https://search.google.com/search-console" target="_blank" rel="noopener">سرچ کنسول (ایندکس و جستجو)</a>
+</div>
+
+<div id="msg" role="status"></div>
+
+<script>
+(function(){
+  var REPO='uusb61938-glitch/uusb61938-glitch.github.io';
+  var API='https://api.github.com/repos/'+REPO+'/contents/songs.json';
+  var songs=[],sha=null,tok='';
+  function $(i){return document.getElementById(i)}
+  function msg(t,bad){var m=$('msg');m.textContent=t;m.style.color=bad?'#ff8d96':'#9be7a6'}
+  function hdr(){return {'Authorization':'Bearer '+tok,'Accept':'application/vnd.github+json'}}
+  try{tok=localStorage.getItem('ghtok')||''}catch(e){}
+  $('tok').value=tok;
+
+  function render(){
+    var u=$('list');u.textContent='';
+    songs.forEach(function(s,i){
+      var li=document.createElement('li'),d=document.createElement('div'),b=document.createElement('b'),p=document.createElement('span'),x=document.createElement('button');
+      b.textContent=s.title;p.textContent=(s.artist||'')+(s.link?' · لینک دارد':'');d.appendChild(b);d.appendChild(p);
+      x.type='button';x.className='del';x.textContent='حذف';
+      x.addEventListener('click',function(){songs.splice(i,1);render()});
+      li.appendChild(d);li.appendChild(x);u.appendChild(li);
+    });
+  }
+
+  async function load(){
+    tok=$('tok').value.trim();
+    if(!tok){msg('اول توکن رو وارد کن.',true);return}
+    try{localStorage.setItem('ghtok',tok)}catch(e){}
+    msg('در حال بارگذاری…');
+    try{
+      var r=await fetch(API+'?ref=main&t='+Date.now(),{headers:hdr()});
+      if(r.status===404){songs=[];sha=null}
+      else if(r.ok){
+        var j=await r.json();sha=j.sha;
+        songs=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));
+      }else{msg('ورود نشد. توکن اشتباهه یا دسترسی نداره ('+r.status+').',true);return}
+      $('editor').hidden=false;render();msg('آهنگ‌ها بارگذاری شد.');
+    }catch(e){msg('به گیت‌هاب وصل نشد. فیلترشکن رو روشن کن و دوباره امتحان کن.',true)}
+  }
+
+  async function save(){
+    msg('در حال ذخیره…');
+    try{
+      var body={message:'update songs',branch:'main',content:btoa(unescape(encodeURIComponent(JSON.stringify(songs,null,2))))};
+      if(sha)body.sha=sha;
+      var r=await fetch(API,{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},hdr()),body:JSON.stringify(body)});
+      if(r.ok){var j=await r.json();sha=j.content.sha;msg('ذخیره شد. تا ۲ دقیقه دیگه روی سایت میاد.')}
+      else msg('ذخیره نشد ('+r.status+'). دسترسی توکن رو چک کن.',true);
+    }catch(e){msg('به گیت‌هاب وصل نشد. فیلترشکن رو روشن کن.',true)}
+  }
+
+  $('go').addEventListener('click',load);
+  $('save').addEventListener('click',save);
+  $('add').addEventListener('click',function(){
+    var t=$('ti').value.trim(),a=$('ar').value.trim(),k=$('lk').value.trim();
+    if(!t){msg('اسم آهنگ رو بنویس.',true);return}
+    if(k&&k.indexOf('https://')!==0){msg('لینک باید با https:// شروع بشه.',true);return}
+    var o={title:t,artist:a};if(k)o.link=k;
+    songs.unshift(o);$('ti').value='';$('ar').value='';$('lk').value='';render();msg('اضافه شد. برای ثبت روی سایت «ذخیره» رو بزن.');
+  });
+  if(tok)load();
+})();
+</script>
+</body>
+</html>
